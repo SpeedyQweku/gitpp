@@ -3,7 +3,7 @@ module github.com/SpeedyQweku/gitpp
 go 1.21.6
 
 require (
-	github.com/google/go-github/v35 v35.3.0
+	github.com/google/go-github/v58 v58.0.0
 	github.com/projectdiscovery/goflags v0.1.37
 	github.com/projectdiscovery/gologger v1.1.12
 	golang.org/x/oauth2 v0.16.0
@@ -36,7 +36,6 @@ require (
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	golang.org/x/crypto v0.18.0 // indirect
 	golang.org/x/exp v0.0.0-20221205204356-47842c84f3db // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/net v0.20.0 // indirect
