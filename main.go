@@ -19,7 +19,7 @@ func gitPP(token, username, repoName string, chPP bool) {
 		Private: github.Bool(chPP),
 	})
 	if err != nil {
-		gologger.Error().Msgf("Error updating repository visibility: %v", err)
+		gologger.Fatal().Msgf("Error updating repository visibility: %v", err)
 	}
 
 	visibility := map[bool]string{true: "Private", false: "Public"}[chPP]
