@@ -1,6 +1,6 @@
 # gitpp
 
-gitpp, helps to make your git repo public/private
+gitpp, helps to make your github repo public/private
 
 ## Installation
 

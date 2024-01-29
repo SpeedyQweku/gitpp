@@ -84,7 +84,7 @@ func main() {
 	)
 
 	flagSet := goflags.NewFlagSet()
-	flagSet.SetDescription("gitpp, helps to make your git repo public/private...")
+	flagSet.SetDescription("gitpp, helps to make your github repo public/private...")
 	flagSet.CreateGroup("input", "INPUT",
 		flagSet.StringVarP(&username, "username", "u", "", "GitHub username"),
 		flagSet.StringVarP(&token, "token", "t", "", "GitHub personal access token"),
