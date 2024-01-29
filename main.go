@@ -89,15 +89,15 @@ func main() {
 		flagSet.StringVarP(&username, "username", "u", "", "GitHub username"),
 		flagSet.StringVarP(&token, "token", "t", "", "GitHub personal access token"),
 		flagSet.StringVarP(&repoName, "repo", "r", "", "Repository name"),
-		flagSet.BoolVarP(&public, "public", "pub", false, "Makes repo public"),
-		flagSet.BoolVarP(&private, "private", "pvt", false, "Makes repo private"),
+		flagSet.BoolVarP(&public, "public", "pub", false, "Make a repo public"),
+		flagSet.BoolVarP(&private, "private", "pvt", false, "Make a repo private"),
 	)
 
 	flagSet.CreateGroup("probes", "PROBES",
 		flagSet.StringVarP(&sortlist, "sort", "s", "update", "The property to sort the results by. \033[33m[created, updated, pushed, full_name]\033[0m"),
 		flagSet.StringVarP(&visilist, "vis", "v", "all", "Limit results to repositories with the specified visibility. \033[33m[all, public, private]\033[0m"),
 		flagSet.StringVarP(&affilist, "affil", "a", "owner", "List repos of given affiliation. \033[33m[owner,collaborator,organization_member]\033[0m"),
-		flagSet.BoolVarP(&listrepo, "list", "l", false, "List all your repo"),
+		flagSet.BoolVarP(&listrepo, "list", "l", false, "List all your repos"),
 	)
 	_ = flagSet.Parse()
 
