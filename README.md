@@ -17,8 +17,8 @@ a default json config is generated if one doesn't exist
 
 ```bash
 {
-    "username":"YOUR_GITHUB_USERNAME",
-    "token" : "YOUR_GITHUB_TOKEN"
+    "username": "",
+    "token" : ""
 }
 ```
 
