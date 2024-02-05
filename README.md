@@ -5,7 +5,7 @@ gitpp, helps to make your github repo public/private
 ## Installation
 
 ```bash
-go install github.com/SpeedyQweku/gitpp@master
+go install github.com/SpeedyQweku/gitpp@v0.0.1
 ```
 
 ## Config
