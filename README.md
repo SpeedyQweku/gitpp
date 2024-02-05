@@ -12,8 +12,7 @@ go install github.com/SpeedyQweku/gitpp@v0.0.1
 
 - added a json config at ~/.config/gitpp/config.json
 
-contains username and github token to be used with the binary
-a default json config is generated if one doesn't exist
+Contains username and github token to be used with the binary, a default json config file is generated if one doesn't exist.
 
 ```bash
 {
