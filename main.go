@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -12,6 +13,86 @@ import (
 	"github.com/projectdiscovery/gologger"
 	"golang.org/x/oauth2"
 )
+
+type Config struct {
+	Username string `json:"username"`
+	Token    string `json:"token"`
+}
+
+type Data struct {
+	username string
+	token    string
+	repoName string
+	sortlist string
+	visilist string
+	affilist string
+	filePath string
+	public   bool
+	private  bool
+	listrepo bool
+}
+
+var usd Data
+
+func init() {
+	// Get the user's home directory
+	hDir, err := os.UserHomeDir()
+	if err != nil {
+		gologger.Error().Msgf("Error getting user's home directory:", err)
+		return
+	}
+	// Specify the folder path and file name
+	folderPath := hDir + "/.config/gitpp"
+	fileName := "config.json"
+	usd.filePath = folderPath + "/" + fileName
+	// Check if the folder exists, and create it if not
+	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
+		err := os.MkdirAll(folderPath, 0755)
+		if err != nil {
+			gologger.Error().Msgf("Error creating folder:", err)
+			return
+		}
+	}
+	// Check if the file exists
+	if _, err := os.Stat(usd.filePath); os.IsNotExist(err) {
+		// File does not exist, create a default config
+		config := Config{
+			Username: "",
+			Token:    "",
+		}
+		// Marshal the config to JSON
+		configJSON, err := json.MarshalIndent(config, "", "    ")
+		if err != nil {
+			gologger.Error().Msgf("Error marshaling config:", err)
+			return
+		}
+		// Write the config to the file
+		err = os.WriteFile(usd.filePath, configJSON, 0644)
+		if err != nil {
+			gologger.Error().Msgf("Error writing config file:", err)
+			return
+		}
+	}
+}
+
+func readConfig() (username, token string) {
+	// Read the config file
+	configFile, err := os.ReadFile(usd.filePath)
+	if err != nil {
+		gologger.Fatal().Msgf("Error reading config file:", err)
+		return "", ""
+	}
+
+	// Unmarshal the JSON into a Config struct
+	var config Config
+	err = json.Unmarshal(configFile, &config)
+	if err != nil {
+		gologger.Fatal().Msgf("Error unmarshaling config:", err)
+		return "", ""
+	}
+
+	return config.Username, config.Token
+}
 
 func gitPP(token, username, repoName string, chPP bool) {
 	ctx := context.Background()
@@ -70,67 +151,65 @@ func printTable(repos []*github.Repository) {
 	_ = w.Flush()
 }
 
-func main() {
-	var (
-		username string
-		token    string
-		repoName string
-		sortlist string
-		visilist string
-		affilist string
-		public   bool
-		private  bool
-		listrepo bool
-	)
+func runner(username, token string) {
+	if usd.listrepo && usd.repoName == "" {
+		repos := listRepos(token, username, usd.sortlist, usd.visilist, usd.affilist)
+		printTable(repos)
+	}
 
+	if usd.repoName != "" && !usd.listrepo {
+		if usd.private {
+			gitPP(token, username, usd.repoName, usd.private)
+		} else if usd.public {
+			usd.public = false
+			gitPP(token, username, usd.repoName, usd.public)
+		} else {
+			gologger.Fatal().Msg("Please specify Private/Public, -h/--help for help.")
+		}
+	}
+
+	if usd.listrepo && usd.repoName != "" {
+		if usd.private {
+			gitPP(token, username, usd.repoName, usd.private)
+		} else if usd.public {
+			usd.public = false
+			gitPP(token, username, usd.repoName, usd.public)
+		} else {
+			gologger.Fatal().Msg("Please specify Private/Public, -h/--help for help.")
+		}
+		repos := listRepos(token, username, usd.sortlist, usd.visilist, usd.affilist)
+		printTable(repos)
+	}
+}
+
+func main() {
 	flagSet := goflags.NewFlagSet()
 	flagSet.SetDescription("gitpp, helps to make your github repo public/private...")
 	flagSet.CreateGroup("input", "INPUT",
-		flagSet.StringVarP(&username, "username", "u", "", "GitHub username"),
-		flagSet.StringVarP(&token, "token", "t", "", "GitHub personal access token"),
-		flagSet.StringVarP(&repoName, "repo", "r", "", "Repository name"),
-		flagSet.BoolVarP(&public, "public", "pub", false, "Make a repo public"),
-		flagSet.BoolVarP(&private, "private", "pvt", false, "Make a repo private"),
+		flagSet.StringVarP(&usd.username, "username", "u", "", "GitHub username"),
+		flagSet.StringVarP(&usd.token, "token", "t", "", "GitHub personal access token"),
+		flagSet.StringVarP(&usd.repoName, "repo", "r", "", "Repository name"),
+		flagSet.BoolVarP(&usd.public, "public", "pub", false, "Make a repo public"),
+		flagSet.BoolVarP(&usd.private, "private", "pvt", false, "Make a repo private"),
 	)
 
 	flagSet.CreateGroup("probes", "PROBES",
-		flagSet.StringVarP(&sortlist, "sort", "s", "update", "The property to sort the results by. \033[33m[created, updated, pushed, full_name]\033[0m"),
-		flagSet.StringVarP(&visilist, "vis", "v", "all", "Limit results to repositories with the specified visibility. \033[33m[all, public, private]\033[0m"),
-		flagSet.StringVarP(&affilist, "affil", "a", "owner", "List repos of given affiliation. \033[33m[owner,collaborator,organization_member]\033[0m"),
-		flagSet.BoolVarP(&listrepo, "list", "l", false, "List all your repos"),
+		flagSet.StringVarP(&usd.sortlist, "sort", "s", "update", "The property to sort the results by. \033[33m[created, updated, pushed, full_name]\033[0m"),
+		flagSet.StringVarP(&usd.visilist, "vis", "v", "all", "Limit results to repositories with the specified visibility. \033[33m[all, public, private]\033[0m"),
+		flagSet.StringVarP(&usd.affilist, "affil", "a", "owner", "List repos of given affiliation. \033[33m[owner,collaborator,organization_member]\033[0m"),
+		flagSet.BoolVarP(&usd.listrepo, "list", "l", false, "List all your repos"),
 	)
 	_ = flagSet.Parse()
 
-	if username == "" && token == "" {
-		gologger.Fatal().Msg("Error Please provide all required arguments,-h/--help for help.")
-	}
-
-	if listrepo && repoName == "" {
-		repos := listRepos(token, username, sortlist, visilist, affilist)
-		printTable(repos)
-	}
-
-	if repoName != "" && !listrepo {
-		if private {
-			gitPP(token, username, repoName, private)
-		} else if public {
-			public = false
-			gitPP(token, username, repoName, public)
+	if usd.username != "" && usd.token != "" {
+		gologger.Print().Msgf("[\033[33mWRN\033[0m] Kindly Use The Config File [%s]", usd.filePath)
+		runner(usd.username, usd.token)
+	} else {
+		configUsername, configToken := readConfig()
+		if configUsername != "" && configToken != "" {
+			runner(configUsername, configToken)
 		} else {
-			gologger.Fatal().Msg("Please specify Private/Public, -h/--help for help.")
+			gologger.Fatal().Msgf("Go Edit [%s] Or -h/--help For Help.", usd.filePath)
 		}
-	}
-
-	if listrepo && repoName != "" {
-		if private {
-			gitPP(token, username, repoName, private)
-		} else if public {
-			public = false
-			gitPP(token, username, repoName, public)
-		} else {
-			gologger.Fatal().Msg("Please specify Private/Public, -h/--help for help.")
-		}
-		repos := listRepos(token, username, sortlist, visilist, affilist)
-		printTable(repos)
 	}
 }
