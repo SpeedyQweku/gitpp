@@ -16,8 +16,8 @@ Contains username and github token to be used with the binary, a default json co
 
 ```bash
 {
-    "username" : "",
-    "token" : ""
+    "Username" : "",
+    "Token" : ""
 }
 ```
 
