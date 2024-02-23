@@ -22,11 +22,11 @@ type Config struct {
 type Data struct {
 	username string
 	token    string
-	repoName string
 	sortlist string
 	visilist string
 	affilist string
 	filePath string
+	repoName goflags.StringSlice
 	public   bool
 	private  bool
 	listrepo bool
@@ -152,28 +152,38 @@ func printTable(repos []*github.Repository) {
 }
 
 func runner(username, token string) {
-	if usd.listrepo && usd.repoName == "" {
+	if usd.listrepo && len(usd.repoName) == 0 {
 		repos := listRepos(token, username, usd.sortlist, usd.visilist, usd.affilist)
 		printTable(repos)
 	}
 
-	if usd.repoName != "" && !usd.listrepo {
+	if len(usd.repoName) > 0 && !usd.listrepo {
+		repoNames := usd.repoName
 		if usd.private {
-			gitPP(token, username, usd.repoName, usd.private)
+			for _, reponame := range repoNames {
+				gitPP(token, username, reponame, usd.private)
+			}
 		} else if usd.public {
 			usd.public = false
-			gitPP(token, username, usd.repoName, usd.public)
+			for _, reponame := range repoNames {
+				gitPP(token, username, reponame, usd.private)
+			}
 		} else {
 			gologger.Fatal().Msg("Please specify Private/Public, -h/--help for help.")
 		}
 	}
 
-	if usd.listrepo && usd.repoName != "" {
+	if usd.listrepo && len(usd.repoName) > 0 {
+		repoNames := usd.repoName
 		if usd.private {
-			gitPP(token, username, usd.repoName, usd.private)
+			for _, reponame := range repoNames {
+				gitPP(token, username, reponame, usd.private)
+			}
 		} else if usd.public {
 			usd.public = false
-			gitPP(token, username, usd.repoName, usd.public)
+			for _, reponame := range repoNames {
+				gitPP(token, username, reponame, usd.private)
+			}
 		} else {
 			gologger.Fatal().Msg("Please specify Private/Public, -h/--help for help.")
 		}
@@ -188,7 +198,7 @@ func main() {
 	flagSet.CreateGroup("input", "INPUT",
 		flagSet.StringVarP(&usd.username, "username", "u", "", "GitHub username"),
 		flagSet.StringVarP(&usd.token, "token", "t", "", "GitHub personal access token"),
-		flagSet.StringVarP(&usd.repoName, "repo", "r", "", "Repository name"),
+		flagSet.StringSliceVarP(&usd.repoName, "repo", "r", nil, "Repository name", goflags.CommaSeparatedStringSliceOptions),
 		flagSet.BoolVarP(&usd.public, "public", "pub", false, "Make a repo public"),
 		flagSet.BoolVarP(&usd.private, "private", "pvt", false, "Make a repo private"),
 	)
