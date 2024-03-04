@@ -38,7 +38,7 @@ func init() {
 	// Get the user's home directory
 	hDir, err := os.UserHomeDir()
 	if err != nil {
-		gologger.Error().Msgf("Error getting user's home directory:", err)
+		gologger.Error().Msgf("Error getting user's home directory: %s", err)
 		return
 	}
 	// Specify the folder path and file name
@@ -49,7 +49,7 @@ func init() {
 	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
 		err := os.MkdirAll(folderPath, 0755)
 		if err != nil {
-			gologger.Error().Msgf("Error creating folder:", err)
+			gologger.Error().Msgf("Error creating folder: %s", err)
 			return
 		}
 	}
@@ -63,13 +63,13 @@ func init() {
 		// Marshal the config to JSON
 		configJSON, err := json.MarshalIndent(config, "", "    ")
 		if err != nil {
-			gologger.Error().Msgf("Error marshaling config:", err)
+			gologger.Error().Msgf("Error marshaling config: %s", err)
 			return
 		}
 		// Write the config to the file
 		err = os.WriteFile(usd.filePath, configJSON, 0644)
 		if err != nil {
-			gologger.Error().Msgf("Error writing config file:", err)
+			gologger.Error().Msgf("Error writing config file: %s", err)
 			return
 		}
 	}
@@ -79,7 +79,7 @@ func readConfig() (username, token string) {
 	// Read the config file
 	configFile, err := os.ReadFile(usd.filePath)
 	if err != nil {
-		gologger.Fatal().Msgf("Error reading config file:", err)
+		gologger.Fatal().Msgf("Error reading config file: %s", err)
 		return "", ""
 	}
 
@@ -87,7 +87,7 @@ func readConfig() (username, token string) {
 	var config Config
 	err = json.Unmarshal(configFile, &config)
 	if err != nil {
-		gologger.Fatal().Msgf("Error unmarshaling config:", err)
+		gologger.Fatal().Msgf("Error unmarshaling config: %s", err)
 		return "", ""
 	}
 
@@ -112,7 +112,7 @@ func gitPP(token, username, repoName string, chPP bool) {
 	gologger.Info().Msgf("Repository URL: https://github.com/%s/%s", username, repoName)
 }
 
-func listRepos(token, username, sortlist, visilist, affilist string) []*github.Repository {
+func listRepos(token, sortlist, visilist, affilist string) []*github.Repository {
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(ctx, ts)
@@ -153,7 +153,7 @@ func printTable(repos []*github.Repository) {
 
 func runner(username, token string) {
 	if usd.listrepo && len(usd.repoName) == 0 {
-		repos := listRepos(token, username, usd.sortlist, usd.visilist, usd.affilist)
+		repos := listRepos(token, usd.sortlist, usd.visilist, usd.affilist)
 		printTable(repos)
 	}
 
@@ -187,7 +187,7 @@ func runner(username, token string) {
 		} else {
 			gologger.Fatal().Msg("Please specify Private/Public, -h/--help for help.")
 		}
-		repos := listRepos(token, username, usd.sortlist, usd.visilist, usd.affilist)
+		repos := listRepos(token, usd.sortlist, usd.visilist, usd.affilist)
 		printTable(repos)
 	}
 }
