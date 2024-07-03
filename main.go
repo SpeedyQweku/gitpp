@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/google/go-github/v58/github"
@@ -26,6 +27,8 @@ type Data struct {
 	visilist string
 	affilist string
 	filePath string
+	confUsername string
+	confToken string
 	repoName goflags.StringSlice
 	public   bool
 	private  bool
@@ -94,6 +97,38 @@ func readConfig() (username, token string) {
 	return config.Username, config.Token
 }
 
+func writeConfig(newConfig Config) {
+	// Read the existing config
+	Username, Token := readConfig()
+
+	existingConfig := Config{
+		Username: Username,
+		Token:    Token,
+	}
+
+	// Update only the fields that are provided in newConfig
+	if newConfig.Username != "" {
+		existingConfig.Username = newConfig.Username
+	}
+	if newConfig.Token != "" {
+		existingConfig.Token = newConfig.Token
+	}
+
+	// Marshal the updated config to JSON
+	data, err := json.MarshalIndent(existingConfig, "", "  ")
+	if err != nil {
+		gologger.Error().Msgf("Error marshaling config: %s", err)
+		return
+	}
+
+	// Write the JSON data to the file
+	err = os.WriteFile(usd.filePath, data, 0644)
+	if err != nil {
+		gologger.Error().Msgf("Error writing config file: %s", err)
+		return
+	}
+}
+
 func gitPP(token, username, repoName string, chPP bool) {
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
@@ -123,6 +158,9 @@ func listRepos(token, sortlist, visilist, affilist string) []*github.Repository 
 	opt := &github.RepositoryListByAuthenticatedUserOptions{Affiliation: affilist, Visibility: visilist, Sort: sortlist}
 	repos, _, err := client.Repositories.ListByAuthenticatedUser(ctx, opt)
 	if err != nil {
+		if strings.Contains(err.Error(), "401 Bad credentials") {
+			log.Fatalf("Bad Credentials")
+		}
 		log.Fatalf("Error listing repositories: %v", err)
 	}
 	allRepos = append(allRepos, repos...)
@@ -198,6 +236,8 @@ func main() {
 	flagSet.CreateGroup("input", "INPUT",
 		flagSet.StringVarP(&usd.username, "username", "u", "", "GitHub username"),
 		flagSet.StringVarP(&usd.token, "token", "t", "", "GitHub personal access token"),
+		flagSet.StringVarP(&usd.confUsername, "configUsername", "cu", "", "Update Username in config file"),
+		flagSet.StringVarP(&usd.confToken, "configToken", "ct", "", "Update Token in config file"),
 		flagSet.StringSliceVarP(&usd.repoName, "repo", "r", nil, "Repository name", goflags.CommaSeparatedStringSliceOptions),
 		flagSet.BoolVarP(&usd.public, "public", "pub", false, "Make a repo public"),
 		flagSet.BoolVarP(&usd.private, "private", "pvt", false, "Make a repo private"),
@@ -211,13 +251,20 @@ func main() {
 	)
 	_ = flagSet.Parse()
 
+	if usd.confUsername != "" || usd.confToken != "" {
+		newConfig := Config {
+			Username: usd.confUsername,
+			Token: usd.confToken,
+		}
+		writeConfig(newConfig)
+	}
 	if usd.username != "" && usd.token != "" {
 		gologger.Print().Msgf("[\033[33mWRN\033[0m] Kindly Use The Config File [%s]", usd.filePath)
 		runner(usd.username, usd.token)
 	} else {
-		configUsername, configToken := readConfig()
-		if configUsername != "" && configToken != "" {
-			runner(configUsername, configToken)
+		rconfigUsername, rconfigToken := readConfig()
+		if rconfigUsername != "" && rconfigToken != "" {
+			runner(rconfigUsername, rconfigToken)
 		} else {
 			gologger.Fatal().Msgf("Go Edit [%s] Or -h/--help For Help.", usd.filePath)
 		}
